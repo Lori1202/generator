@@ -31,7 +31,7 @@ def process_value_to_richtext(val):
 # ---------------- 主程式 ----------------
 st.set_page_config(page_title="節能績效計劃書生成器", page_icon="📊")
 
-st.title("📊 節能績效計劃書生成器(表格連動版)")
+st.title("📊 HWsmart節能績效計劃書生成器")
 st.markdown("""
 此工具支援 **Excel 表格同步** 功能：
 1. **單一變數**：請放在 Excel 第一個 Sheet (或命名為 '變數')。
@@ -121,4 +121,5 @@ if uploaded_word and uploaded_excel:
 
         except Exception as e:
             st.error(f"❌ 發生錯誤：{e}")
+
             st.info("提示：請確認 Word 裡的表格標籤 `{% tr for ... %}` 是否與 Excel Sheet 名稱一致。")
