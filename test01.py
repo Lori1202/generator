@@ -125,7 +125,7 @@ if uploaded_word and uploaded_excel:
             doc_bytes = output_buffer.getvalue()
 
             # 檔名邏輯：如果有「檔名」這個變數且是一般字串，就用它當檔名
-            download_name = "報告_表格連動版.docx"
+            download_name = "報告測試.docx"
             file_name_var = context.get("檔名", None)
             if isinstance(file_name_var, str) and file_name_var.strip():
                 download_name = f"{file_name_var.strip()}.docx"
@@ -143,5 +143,6 @@ if uploaded_word and uploaded_excel:
                 "提示：請再次檢查 Word 模板中的標籤是否與 Excel Sheet 名稱一致，"
                 "並確保 RichText 變數使用 {{r 變數名}} 或 {{r row.欄位名}} 的寫法。"
             )
+
 
 
