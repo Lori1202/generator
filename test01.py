@@ -132,7 +132,7 @@ if uploaded_word and uploaded_excel:
                         table_list.append(row_dict)
 
                     context[sheet_name] = table_list
-                    st.success(f"✅ 已載入表格資料：{sheet_name}（共 {len(table_list)} 筆）")
+                    print(f"已載入表格資料：{sheet_name}（共 {len(table_list)} 筆）")
 
             # 渲染 Word
             doc_stream = io.BytesIO(word_bytes)
@@ -172,3 +172,4 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
