@@ -140,9 +140,11 @@ if uploaded_word and uploaded_excel:
         except Exception as e:
             st.error(f"❌ 發生錯誤：{e}")
             st.info(
-                "提示：請再次檢查 Word 模板中的標籤是否與 Excel Sheet 名稱一致，"
-                "並確保 RichText 變數使用 {{r 變數名}} 或 {{r row.欄位名}} 的寫法。"
+                "提示：請檢查 Word 模板中的標籤。\n"
+                "1. 請確保使用 {{ 變數名稱 }} 而非 {{r 變數名稱}}。\n"
+                "2. 若發生 'Table' 相關錯誤，請改用標準 Word 表格重新排版。"
             )
+
 
 
 
