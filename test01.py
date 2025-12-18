@@ -19,7 +19,8 @@ def process_value_to_richtext(val):
         return ""
 
     is_number = False
-    # 嘗試轉成 float
+    float_val = 0.0
+   
     try:
         float(val_str)
         
@@ -34,10 +35,12 @@ def process_value_to_richtext(val):
             if "-" in val_str:
                 # 如果有負號，必須確認它是在第一位，且只有一個 (避免 2023-01-01)
                 if val_str.count("-") == 1 and val_str.startswith("-"):
+                    float_val = float(val_str)
                     is_number = True
                 else:
                     is_number = False
             else:
+                float_val = float(val_str)
                 is_number = True
                 
     except ValueError:
@@ -180,6 +183,7 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
 
 
