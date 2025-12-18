@@ -3,7 +3,7 @@ import pandas as pd
 from docxtpl import DocxTemplate, RichText
 import io
 
-# ---------------- 處理紅字邏輯 ----------------
+# ---------------- 處理數字邏輯 ----------------
 def process_value_to_richtext(val):
     """
     判斷數值是否需要變紅：
@@ -187,6 +187,7 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
 
 
