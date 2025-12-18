@@ -19,8 +19,8 @@ def process_value_to_richtext(val):
         return ""
 
     is_number = False
+    # 嘗試轉成 float
     try:
-        # 嘗試轉成 float
         float(val_str)
         
         # 修正邏輯：
@@ -44,10 +44,17 @@ def process_value_to_richtext(val):
         is_number = False
 
     if is_number:
+        # 判斷是否為整數 (例如數量 2, 100)
+        if float_val.is_integer():
+            formatted_str = "{:,.0f}".format(float_val) # 整數：加逗號，不留小數
+        else:
+            formatted_str = "{:,.2f}".format(float_val) # 小數：加逗號，強制2位
+            
         rt = RichText()
-        rt.add(val_str, color="FF0000", bold=True)
+        rt.add(formatted_str, color="FF0000", bold=True)
         return rt
     else:
+        # 非數值 (如日期字串、文字)，直接回傳原始內容
         return val_str
 
 # ---------------- 主程式 ----------------
@@ -155,15 +162,14 @@ if uploaded_word and uploaded_excel:
             elif isinstance(file_name_var, str) and file_name_var.strip():
                 download_name = f"{file_name_var.strip()}.docx"
 
-            # === 關鍵修正：將結果存入 Session State ===
+            # 將結果存入 Session State ==
             st.session_state['generated_doc'] = doc_bytes
             st.session_state['download_name'] = download_name
             st.success("✅ 報告生成成功！請點擊下方按鈕下載。")
 
         except Exception as e:
             st.error(f"❌ 發生錯誤：{e}")
-
-    # === 下載按鈕移出 if st.button 區塊 ===
+            
     # 只要 session_state 裡有檔案，就顯示下載按鈕
     if 'generated_doc' in st.session_state:
         st.download_button(
@@ -172,4 +178,5 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
