@@ -132,6 +132,10 @@ if uploaded_word and uploaded_excel:
                 # 2) 表格 Sheet
                 else:
                     df = excel_file.parse(sheet_name=sheet_name)
+
+                    # 刪除整列都是 NaN (空值) 的列
+                    df = df.dropna(how='all')
+                    
                     # 去除欄位名稱的空格，避免 Jinja2 報錯 (Option)
                     df.columns = [str(c).strip() for c in df.columns]
                     
@@ -183,6 +187,7 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
 
 
