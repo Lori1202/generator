@@ -49,9 +49,8 @@ def process_value_to_richtext(val, key_name=""):
         # 轉小寫並去空白，增加比對成功率
         key_lower = str(key_name).strip().lower()
         
-        # === 核心邏輯修正 ===
         # 1. 結尾是 _rate
-        # 2. 只要名稱裡面包含 elec_price (例如 elec_price_1, avg_elec_price 都算)
+        # 2. 只要名稱裡面包含 elec_price 
         if key_lower.endswith("_rate") or "elec_price" in key_lower:
             formatted_str = "{:,.2f}".format(float_val) # 保留 2 位小數
         else:
@@ -114,7 +113,7 @@ if uploaded_word and uploaded_excel:
             debug_logs = [] # 用來存變數讀取紀錄
             st.toast("🔍 正在解析 Excel 資料...") # 使用 toast 比較不干擾
 
-            # === 修改點：使用 enumerate 來取得索引 ===
+            # 用 enumerate 來取得索引
             for i, sheet_name in enumerate(sheet_names):
                 
                 # 1) 變數 Sheet：只要是第 1 個 Sheet (Index 0)，不論名稱為何，都視為變數表
@@ -200,3 +199,4 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
