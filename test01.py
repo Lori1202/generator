@@ -53,6 +53,10 @@ def process_value_to_richtext(val, key_name=""):
         # 2. 只要名稱裡面包含 elec_price 
         if key_lower.endswith("_rate") or "elec_price" in key_lower:
             formatted_str = "{:,.2f}".format(float_val) # 保留 2 位小數
+
+        elif key_lower.endswith("_year"):
+            formatted_str = "{:,.1f}".format(float_val) # 保留 1 位小數
+            
         else:
             formatted_str = "{:,.0f}".format(float_val) # 強制取整數
             
@@ -199,4 +203,5 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
