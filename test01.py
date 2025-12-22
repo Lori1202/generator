@@ -4,12 +4,20 @@ from docxtpl import DocxTemplate, RichText
 import io
 
 # ---------------- 處理數字邏輯 ----------------
-def process_value_to_richtext(val):
+def process_value_to_richtext(val, key_name=""):
     """
-    判斷數值是否需要變紅：
-    - 空值 / NaN：回傳空字串
-    - 純數字（包含負數，但不含日期分隔符 /）：回傳 RichText 紅字粗體
-    - 其他：回傳字串
+    判斷數值是否需要變紅並格式化：
+    Args:
+        val: 數值內容
+        key_name: 變數名稱 (用來判斷格式化規則)
+    
+    規則：
+    1. 空值 / NaN：回傳空字串
+    2. 純數字：
+       - 若 key_name 結尾是 "_rate" 或開頭是 "elec_price_"：強制保留 2 位小數
+       - 其他變數：四捨五入取整數 (無小數)
+       - 格式化後皆標示為 RichText 紅字粗體
+    3. 其他：回傳字串
     """
     if pd.isna(val):
         return ""
@@ -20,20 +28,12 @@ def process_value_to_richtext(val):
 
     is_number = False
     float_val = 0.0
-   
+    
     try:
-        float(val_str)
-        
-        # 修正邏輯：
-        # 1. 允許負號 (負數)
-        # 2. 排除常見日期符號 "/" (如 2023/01/01)
-        # 3. 如果是用 "-" 分隔的日期 (如 2023-01-01)，通常 float() 會先失敗，
-        #    但為了保險起見，可以檢查是否有多個 "-" 或 "-" 不在開頭
-        
-        # 簡單判定：只要沒有 "/" 且 (沒有 "-" 或是 "-" 只出現在第一個位置)
+        # 排除日期格式邏輯
         if "/" not in val_str:
+            # 處理負號邏輯 (避免將 2023-01-01 誤判為負數)
             if "-" in val_str:
-                # 如果有負號，必須確認它是在第一位，且只有一個 (避免 2023-01-01)
                 if val_str.count("-") == 1 and val_str.startswith("-"):
                     float_val = float(val_str)
                     is_number = True
@@ -42,16 +42,20 @@ def process_value_to_richtext(val):
             else:
                 float_val = float(val_str)
                 is_number = True
-                
     except ValueError:
         is_number = False
 
     if is_number:
-        # 判斷是否為整數 (例如數量 2, 100)
-        if float_val.is_integer():
-            formatted_str = "{:,.0f}".format(float_val) # 整數：加逗號，不留小數
+        # === 根據變數名稱決定小數位數 ===
+        key_str = str(key_name).strip()
+        
+        # 條件 1: 變數名稱結尾是 "_rate" 或 開頭是 "elec_price_"
+        if key_str.endswith("_rate") or key_str.startswith("elec_price_"):
+            formatted_str = "{:,.2f}".format(float_val) # 強制 2 位小數
         else:
-            formatted_str = "{:,.2f}".format(float_val) # 小數：加逗號，強制2位
+            # 條件 2: 其餘數值，四捨五入取整數
+            # 注意：Python 的 format 在 .0f 時會自動四捨五入 (Rounding)
+            formatted_str = "{:,.0f}".format(float_val) 
             
         rt = RichText()
         rt.add(formatted_str, color="FF0000", bold=True)
@@ -144,7 +148,7 @@ if uploaded_word and uploaded_excel:
                         row_dict = {}
                         for col_name in df.columns:
                             val = row[col_name]
-                            row_dict[col_name] = process_value_to_richtext(val)
+                            row_dict[col_name] = process_value_to_richtext(val, key_name=col_name)
                         table_list.append(row_dict)
 
                     context[sheet_name] = table_list
@@ -187,6 +191,7 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
 
 
