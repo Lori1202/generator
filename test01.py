@@ -50,7 +50,7 @@ def process_value_to_richtext(val, key_name=""):
         key_str = str(key_name).strip()
         
         # 條件 1: 變數名稱結尾是 "_rate" 或 開頭是 "elec_price_"
-        if key_str.endswith("_rate") or key_str.startswith("elec_price_"):
+        if key_str.endswith("_rate}}") or key_str.startswith("{{elec_price_"):
             formatted_str = "{:,.2f}".format(float_val) # 強制 2 位小數
         else:
             # 條件 2: 其餘數值，四捨五入取整數
@@ -191,6 +191,7 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
 
 
