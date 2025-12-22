@@ -14,7 +14,7 @@ def process_value_to_richtext(val, key_name=""):
     規則：
     1. 空值 / NaN：回傳空字串
     2. 純數字：
-       - 若 key_name 結尾是 "_rate" 或開頭是 "elec_price_"：強制保留 2 位小數
+       - 若 key_name 結尾是 "_rate" (不分大小寫) 或 包含 "elec_price" (不分大小寫)：強制保留 2 位小數
        - 其他變數：四捨五入取整數 (無小數)
        - 格式化後皆標示為 RichText 紅字粗體
     3. 其他：回傳字串
@@ -70,24 +70,20 @@ st.title("📊 HWsmart節能績效計劃書生成器")
 st.markdown("""
 此工具支援 **Excel 表格同步** 功能：
 
-1. **單一變數（例如：COP、效率、kWh 等）**  
-   - 自動將數值轉為 **千分位 + 兩位小數** 並標示為 **紅字**。
+1. **單一變數（例如：COP、效率、kWh 等）** - 自動將數值轉為 **千分位 + 兩位小數** 並標示為 **紅字**。
    - 例如：`1506877.247` → `1,506,877.25` (紅字)。
    - 請放在 Excel Sheet 的 `變數` 或 `Variables` 工作表中。  
    - 第 1 欄為「變數名稱」，第 2 欄為「數值」，其餘欄位會被忽略。  
    - 在 Word 中使用：`{{r 變數名稱}}`。
 
-2. **表格資料（例如：改善前冰水機、改善前水泵…）**  
-   - 每個表格放在獨立的 Sheet，**Sheet 名稱 = Word 中的變數名稱**  
-     （例如 Excel Sheet 叫 `改善前冰水機`，Word 中就寫 `改善前冰水機`）。
+2. **表格資料（例如：改善前冰水機、改善前水泵…）** - 每個表格放在獨立的 Sheet，**Sheet 名稱 = Word 中的變數名稱** （例如 Excel Sheet 叫 `改善前冰水機`，Word 中就寫 `改善前冰水機`）。
    - 在 Word 表格內使用（搭配 docxtpl 的 row 擴充）：  
 
      開頭列某一格寫：`{%tr for row in 改善前冰水機 %}`  
      中間每個儲存格：`{{ row.欄位名 }}` 或 `{{r row.欄位名 }}`  
      結尾列某一格寫：`{%tr endfor %}`
 
-3. **RichText（紅字）**  
-   - 只要 Python 端把某變數處理成 RichText，Word 模板要寫成 `{{r 變數}}` 或 `{{r row.欄位}}`。
+3. **RichText（紅字）** - 只要 Python 端把某變數處理成 RichText，Word 模板要寫成 `{{r 變數}}` 或 `{{r row.欄位}}`。
 """)
 
 col1, col2 = st.columns(2)
@@ -118,9 +114,11 @@ if uploaded_word and uploaded_excel:
             debug_logs = [] # 用來存變數讀取紀錄
             st.toast("🔍 正在解析 Excel 資料...") # 使用 toast 比較不干擾
 
-            for sheet_name in sheet_names:
-                # 1) 變數 Sheet
-                if sheet_name in ["變數", "Variables"]:
+            # === 修改點：使用 enumerate 來取得索引 ===
+            for i, sheet_name in enumerate(sheet_names):
+                
+                # 1) 變數 Sheet：只要是第 1 個 Sheet (Index 0)，不論名稱為何，都視為變數表
+                if i == 0:
                     df_var = excel_file.parse(sheet_name=sheet_name, header=None)
                     count_vars = 0
                     for _, row in df_var.iterrows():
@@ -128,21 +126,23 @@ if uploaded_word and uploaded_excel:
                             continue
                         key = str(row[0]).strip()
                         val = row[1]
-                        # 處理變數
+                        
+                        # 處理變數 (傳入 key 進行判斷)
                         processed_val = process_value_to_richtext(val, key_name=key)
                         context[key] = processed_val
                         count_vars += 1
 
-                       # 記錄 debug 資訊
+                        # 記錄 debug 資訊
                         val_display = val
                         is_decimal = False
                         key_lower = key.lower()
+                        # debug 顯示邏輯與處理邏輯同步
                         if key_lower.endswith("_rate") or "elec_price" in key_lower:
                             is_decimal = True
                             
                         debug_logs.append(f"變數: {key} | 原始值: {val} | 判斷小數: {is_decimal}")
 
-                # 2) 表格 Sheet
+                # 2) 表格 Sheet：其餘的 Sheet
                 else:
                     df = excel_file.parse(sheet_name=sheet_name)
 
@@ -200,12 +200,3 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
-
-
-
-
-
-
-
-
-
