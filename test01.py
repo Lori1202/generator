@@ -46,22 +46,21 @@ def process_value_to_richtext(val, key_name=""):
         is_number = False
 
     if is_number:
-        # === 根據變數名稱決定小數位數 ===
-        key_str = str(key_name).strip()
+        # 轉小寫並去空白，增加比對成功率
+        key_lower = str(key_name).strip().lower()
         
-        # 條件 1: 變數名稱結尾是 "_rate" 或 開頭是 "elec_price_"
-        if key_str.endswith("_rate}}") or key_str.startswith("{{elec_price_"):
-            formatted_str = "{:,.2f}".format(float_val) # 強制 2 位小數
+        # === 核心邏輯修正 ===
+        # 1. 結尾是 _rate
+        # 2. 只要名稱裡面包含 elec_price (例如 elec_price_1, avg_elec_price 都算)
+        if key_lower.endswith("_rate") or "elec_price" in key_lower:
+            formatted_str = "{:,.2f}".format(float_val) # 保留 2 位小數
         else:
-            # 條件 2: 其餘數值，四捨五入取整數
-            # 注意：Python 的 format 在 .0f 時會自動四捨五入 (Rounding)
-            formatted_str = "{:,.0f}".format(float_val) 
+            formatted_str = "{:,.0f}".format(float_val) # 強制取整數
             
         rt = RichText()
         rt.add(formatted_str, color="FF0000", bold=True)
         return rt
     else:
-        # 非數值 (如日期字串、文字)，直接回傳原始內容
         return val_str
 
 # ---------------- 主程式 ----------------
@@ -116,6 +115,7 @@ if uploaded_word and uploaded_excel:
             sheet_names = excel_file.sheet_names
 
             context = {}
+            debug_logs = [] # 用來存變數讀取紀錄
             st.toast("🔍 正在解析 Excel 資料...") # 使用 toast 比較不干擾
 
             for sheet_name in sheet_names:
@@ -128,10 +128,19 @@ if uploaded_word and uploaded_excel:
                             continue
                         key = str(row[0]).strip()
                         val = row[1]
-                        context[key] = process_value_to_richtext(val)
+                        # 處理變數
+                        processed_val = process_value_to_richtext(val, key_name=key)
+                        context[key] = processed_val
                         count_vars += 1
-                    # 存入 log 供除錯用，不直接 print
-                    print(f"變數表載入: {count_vars} 筆")
+
+                       # 記錄 debug 資訊
+                        val_display = val
+                        is_decimal = False
+                        key_lower = key.lower()
+                        if key_lower.endswith("_rate") or "elec_price" in key_lower:
+                            is_decimal = True
+                            
+                        debug_logs.append(f"變數: {key} | 原始值: {val} | 判斷小數: {is_decimal}")
 
                 # 2) 表格 Sheet
                 else:
@@ -191,6 +200,7 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
 
 
