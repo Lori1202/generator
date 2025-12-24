@@ -49,16 +49,21 @@ def process_value_to_richtext(val, key_name=""):
         # 轉小寫並去空白，增加比對成功率
         key_lower = str(key_name).strip().lower()
         
-        # 1. 結尾是 _rate
-        # 2. 只要名稱裡面包含 elec_price 
-        if key_lower.endswith("_rate") or "elec_price" in key_lower:
-            formatted_str = "{:,.2f}".format(float_val) # 保留 2 位小數
+       if key_lower.startswith("me_"):
 
+            formatted_str = "{:,}".format(float_val)
+
+        # 2. 結尾是 _rate 或 包含 elec_price
+        elif key_lower.endswith("_rate") or "elec_price" in key_lower:
+            formatted_str = "{:,.2f}".format(float_val) # 強制 2 位小數
+
+        # 3. 結尾是 _year
         elif key_lower.endswith("_year"):
-            formatted_str = "{:,.1f}".format(float_val) # 保留 1 位小數
+            formatted_str = "{:,.1f}".format(float_val) # 強制 1 位小數
             
+        # 4. 其他預設情況 (其餘變數維持取整數)
         else:
-            formatted_str = "{:,.0f}".format(float_val) # 強制取整數
+            formatted_str = "{:,.0f}".format(float_val)
             
         rt = RichText()
         rt.add(formatted_str, color="FF0000", bold=True)
@@ -203,5 +208,6 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
 
