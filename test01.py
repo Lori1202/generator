@@ -81,7 +81,7 @@ def process_value_to_richtext(val, key_name=""):
             formatted_str = "{:,.0f}".format(float_val)
             
         rt = RichText()
-        rt.add(formatted_str, color="FF0000", bold=True)
+        rt.add(formatted_str, color="FF0000", bold=False)
         return rt
     else:
         return val_str
@@ -222,6 +222,7 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
 
 
