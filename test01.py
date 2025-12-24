@@ -78,9 +78,8 @@ st.title("📊 HWsmart節能績效計劃書生成器")
 st.markdown("""
 此工具支援 **Excel 表格同步** 功能：
 
-1. **單一變數（例如：COP、效率、kWh 等）** - 自動將數值轉為 **千分位 + 兩位小數** 並標示為 **紅字**。
-   - 例如：`1506877.247` → `1,506,877.25` (紅字)。
-   - 請放在 Excel Sheet 的 `變數` 或 `Variables` 工作表中。  
+1. **單一變數（例如：COP、效率、kWh 等）標示為 **紅字**。
+   - 請放在 Excel Sheet 的 第一個分頁中。  
    - 第 1 欄為「變數名稱」，第 2 欄為「數值」，其餘欄位會被忽略。  
    - 在 Word 中使用：`{{r 變數名稱}}`。
 
@@ -208,6 +207,7 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
 
 
