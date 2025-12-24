@@ -26,6 +26,9 @@ def process_value_to_richtext(val, key_name=""):
     if val_str == "":
         return ""
 
+    if "~" in val_str:
+        return val_str
+
     is_number = False
     float_val = 0.0
     
@@ -222,6 +225,7 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
 
 
