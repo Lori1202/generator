@@ -49,9 +49,24 @@ def process_value_to_richtext(val, key_name=""):
         # 轉小寫並去空白，增加比對成功率
         key_lower = str(key_name).strip().lower()
         
-        # 1. 優先判斷：變數名稱是否以 "me_" 開頭 (顯示原始數值 + 千分位)
+
         if key_lower.startswith("me_"):
-            formatted_str = "{:,}".format(float_val)
+
+            #使用字串切割方式判斷原始數據為39.0與2
+            if "." in val_str:
+                # 如果原始資料有小數點 (例如 "39.0" 或 "1234.56")
+                parts = val_str.split(".")
+                integer_part = parts[0]
+                decimal_part = parts[1]
+                
+                # 整數部分加千分位
+                formatted_int = "{:,}".format(int(integer_part))
+                
+                # 拼回去：千分位整數 + "." + 原始小數部分
+                formatted_str = f"{formatted_int}.{decimal_part}"
+            else:
+                # 如果原始資料沒有小數點 (例如 "2" 或 "1000")
+                formatted_str = "{:,}".format(int(float_val))
 
         # 2. 結尾是 _rate 或 包含 elec_price (強制 2 位小數)
         elif key_lower.endswith("_rate") or "elec_price" in key_lower:
@@ -207,6 +222,7 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
 
 
