@@ -3,22 +3,22 @@ import pandas as pd
 from docxtpl import DocxTemplate, RichText
 import io
 
-# ---------------- 處理數字邏輯 ----------------
-def process_value_to_richtext(val, key_name=""):
-    """
-    判斷數值是否需要變紅並格式化：
-    Args:
-        val: 數值內容
-        key_name: 變數名稱 (用來判斷格式化規則)
-    
-    規則：
-    1. 空值 / NaN：回傳空字串
-    2. 純數字：
-       - 若 key_name 結尾是 "_rate" (不分大小寫) 或 包含 "elec_price" (不分大小寫)：強制保留 2 位小數
-       - 其他變數：四捨五入取整數 (無小數)
-       - 格式化後皆標示為 RichText 紅字粗體
-    3. 其他：回傳字串
-    """
+# ===============================
+# 1️⃣ 格式規則設定（唯一維護點）
+# ===============================
+FORMAT_RULES = {
+    "me_prefix": {"description": "ME 類：千分位 + 保留原始小數"},
+    "decimal_2": {
+        "keywords": ["_rate", "elec_price", "new_cop_std", "new_eff_std"],
+        "description": "2 位小數"},
+    "decimal_1": {"keywords": ["_year"], "description": "1 位小數"},
+    "integer": {"description": "整數（預設）"},
+}
+
+# ===============================
+# 2️⃣ 單一變數處理（會格式化 + 紅字）
+# ===============================
+def process_value_to_richtext(val, key_name="", debug=False):
     if pd.isna(val):
         return ""
 
@@ -26,75 +26,72 @@ def process_value_to_richtext(val, key_name=""):
     if val_str == "":
         return ""
 
+    # 區間值不變紅
     if "~" in val_str or "～" in val_str:
         rt = RichText()
-        rt.add(val_str, color="000000", bold=False) # 強制黑色、不加粗
+        rt.add(val_str, color="000000", bold=False)
+        if debug:
+            st.write(f"[DEBUG] {key_name} → 區間值")
         return rt
 
-    is_number = False
-    float_val = 0.0
-    
+    # 嘗試轉為數字（排除日期）
     try:
-        # 排除日期格式邏輯
-        if "/" not in val_str:
-            # 處理負號邏輯 (避免將 2023-01-01 誤判為負數)
-            if "-" in val_str:
-                if val_str.count("-") == 1 and val_str.startswith("-"):
-                    float_val = float(val_str)
-                    is_number = True
-                else:
-                    is_number = False
-            else:
-                float_val = float(val_str)
-                is_number = True
+        if "/" in val_str:
+            return val_str
+        if "-" in val_str and not val_str.startswith("-"):
+            return val_str
+        float_val = float(val_str)
     except ValueError:
-        is_number = False
-
-    if is_number:
-        # 轉小寫並去空白，增加比對成功率
-        key_lower = str(key_name).strip().lower()
-        
-
-        if key_lower.startswith("me_"):
-
-            #使用字串切割方式判斷原始數據為39.0與2
-            if "." in val_str:
-                # 如果原始資料有小數點 (例如 "39.0" 或 "1234.56")
-                parts = val_str.split(".")
-                integer_part = parts[0]
-                decimal_part = parts[1]
-                
-                # 整數部分加千分位
-                formatted_int = "{:,}".format(int(integer_part))
-                
-                # 拼回去：千分位整數 + "." + 原始小數部分
-                formatted_str = f"{formatted_int}.{decimal_part}"
-            else:
-                # 如果原始資料沒有小數點 (例如 "2" 或 "1000")
-                formatted_str = "{:,}".format(int(float_val))
-
-        # 2. 結尾是 _rate 或 包含 elec_price (強制 2 位小數)
-        elif key_lower.endswith("_rate") 
-             or "elec_price" in key_lower
-             or "new_cop_std" in key_lower
-             or "new_eff_std" in key_lower):
-            formatted_str = "{:,.2f}".format(float_val)
-
-        # 3. 結尾是 _year (強制 1 位小數)
-        elif key_lower.endswith("_year"):
-            formatted_str = "{:,.1f}".format(float_val)
-            
-        # 4. 其他預設情況 (四捨五入取整數)
-        else:
-            formatted_str = "{:,.0f}".format(float_val)
-            
-        rt = RichText()
-        rt.add(formatted_str, color="FF0000", bold=False)
-        return rt
-    else:
         return val_str
 
-# ---------------- 主程式 ----------------
+    key_lower = str(key_name).lower()
+
+    # ---------- 規則判斷 ----------
+    if key_lower.startswith("me_"):
+        rule_desc = FORMAT_RULES["me_prefix"]["description"]
+        if "." in val_str:
+            int_part, dec_part = val_str.split(".", 1)
+            formatted = f"{int(int_part):,}.{dec_part}"
+        else:
+            formatted = f"{int(float_val):,}"
+
+    elif any(k in key_lower for k in FORMAT_RULES["decimal_2"]["keywords"]):
+        rule_desc = FORMAT_RULES["decimal_2"]["description"]
+        formatted = f"{float_val:,.2f}"
+
+    elif any(k in key_lower for k in FORMAT_RULES["decimal_1"]["keywords"]):
+        rule_desc = FORMAT_RULES["decimal_1"]["description"]
+        formatted = f"{float_val:,.1f}"
+
+    else:
+        rule_desc = FORMAT_RULES["integer"]["description"]
+        formatted = f"{float_val:,.0f}"
+
+    if debug:
+        st.write(f"[DEBUG] {key_name} → {rule_desc} → {formatted}")
+
+    rt = RichText()
+    rt.add(formatted, color="FF0000", bold=False)
+    return rt
+
+
+# ===============================
+# 3️⃣ 表格 sheet 的值：完全不更動
+# ===============================
+def keep_table_value_raw(val):
+    # 表格欄位：不做任何格式化、不做紅字，僅處理空值
+    if pd.isna(val):
+        return ""
+    s = str(val)
+    # 防止 dtype=str 後出現 'nan'
+    if s.strip().lower() == "nan":
+        return ""
+    return s
+
+
+# ===============================
+# Streamlit UI（原本顯示頁面）
+# ===============================
 st.set_page_config(page_title="節能績效計劃書生成器", page_icon="📊")
 
 st.title("📊 HWsmart節能績效計劃書生成器")
@@ -102,19 +99,22 @@ st.markdown("""
 此工具支援 **Excel 表格同步** 功能：
 
 1. **單一變數**（例如：COP、效率、kWh 等）標示為 **紅字**。
-   - 請放在 Excel Sheet 的 第一個分頁中。  
+   - 請放在 Excel Sheet 的 **第一個分頁**。  
    - 第 1 欄為「變數名稱」，第 2 欄為「數值」，其餘欄位會被忽略。  
    - 在 Word 中使用：`{{r 變數名稱}}`。
 
-2. **表格資料（例如：改善前冰水機、改善前水泵…）** - 每個表格放在獨立的 Sheet，**Sheet 名稱 = Word 中的變數名稱** （例如 Excel Sheet 叫 `改善前冰水機`，Word 中就寫 `改善前冰水機`）。
-   - 在 Word 表格內使用（搭配 docxtpl 的 row 擴充）：  
+2. **表格資料（例如：改善前冰水機、改善前水泵…）**
+   - 每個表格放在獨立的 Sheet  
+   - **Sheet 名稱 = Word 中的分頁名稱**  
+   - Word 表格內使用（docxtpl row 擴充）
 
-     開頭列某一格寫：`{%tr for row in 改善前冰水機 %}`  
-     中間每個儲存格：`{{ row.欄位名 }}` 或 `{{r row.欄位名 }}`  
-     結尾列某一格寫：`{%tr endfor %}`
-
-3. **RichText（紅字）** - 只要 Python 端把某變數處理成 RichText，Word 模板要寫成 `{{r 變數}}` 或 `{{r row.欄位}}`。
+3. **RichText（紅字）**
+   - Python 端處理成 RichText
+   - Word 模板請使用 `{{r 變數}}` 或 `{{row.欄位}}`
 """)
+
+
+debug_mode = st.checkbox("🧪 Debug 模式（顯示規則判斷）")
 
 col1, col2 = st.columns(2)
 with col1:
@@ -122,123 +122,70 @@ with col1:
 with col2:
     uploaded_excel = st.file_uploader("2️⃣ 上傳 Excel 數據 (.xlsx)", type="xlsx")
 
+# ===============================
+# 主流程
+# ===============================
 if uploaded_word and uploaded_excel:
     st.divider()
 
-    # 按鈕邏輯修正：使用 session_state 來處理生成狀態
     if st.button("🚀 開始生成報告", type="primary"):
         try:
-            # 重置指標至開頭，確保重複執行時讀取正確
             uploaded_word.seek(0)
             uploaded_excel.seek(0)
 
-            # 讀取檔案
             word_bytes = uploaded_word.read()
-            excel_bytes = uploaded_excel.read()
-
-            excel_io = io.BytesIO(excel_bytes)
-            excel_file = pd.ExcelFile(excel_io)
-            sheet_names = excel_file.sheet_names
+            excel_file = pd.ExcelFile(uploaded_excel)
 
             context = {}
-            debug_logs = [] # 用來存變數讀取紀錄
-            st.toast("🔍 正在解析 Excel 資料...") # 使用 toast 比較不干擾
+            st.toast("🔍 正在解析 Excel 資料...")
 
-            # 用 enumerate 來取得索引
-            for i, sheet_name in enumerate(sheet_names):
-                
-                # 1) 變數 Sheet：只要是第 1 個 Sheet (Index 0)，不論名稱為何，都視為變數表
-                if i == 0:
-                    df_var = excel_file.parse(sheet_name=sheet_name, header=None)
-                    count_vars = 0
+            for idx, sheet_name in enumerate(excel_file.sheet_names):
+
+                # -------- 變數 Sheet（會格式化 + 紅字）--------
+                if idx == 0:
+                    df_var = excel_file.parse(sheet_name, header=None)
                     for _, row in df_var.iterrows():
                         if pd.isna(row[0]):
                             continue
                         key = str(row[0]).strip()
                         val = row[1]
-                        
-                        # 處理變數 (傳入 key 進行判斷)
-                        processed_val = process_value_to_richtext(val, key_name=key)
-                        context[key] = processed_val
-                        count_vars += 1
+                        context[key] = process_value_to_richtext(val, key, debug=debug_mode)
 
-                        # 記錄 debug 資訊
-                        val_display = val
-                        is_decimal = False
-                        key_lower = key.lower()
-                        # debug 顯示邏輯與處理邏輯同步
-                        if key_lower.endswith("_rate") or "elec_price" in key_lower:
-                            is_decimal = True
-                            
-                        debug_logs.append(f"變數: {key} | 原始值: {val} | 判斷小數: {is_decimal}")
-
-                # 2) 表格 Sheet：其餘的 Sheet
+                # -------- 表格 Sheet（完全不更動值）--------
                 else:
-                    df = excel_file.parse(sheet_name=sheet_name)
-
-                    # 刪除整列都是 NaN (空值) 的列
-                    df = df.dropna(how='all')
-                    
-                    # 去除欄位名稱的空格，避免 Jinja2 報錯 (Option)
+                    # 用 dtype=str 讀，盡量保留原始樣子（不套格式化規則）
+                    df = excel_file.parse(sheet_name, dtype=str).fillna("")
                     df.columns = [str(c).strip() for c in df.columns]
-                    
-                    table_list = []
+
+                    # 刪除整列皆空（字串）列
+                    df = df[df.apply(lambda r: any(str(x).strip() for x in r.values), axis=1)]
+
+                    table = []
                     for _, row in df.iterrows():
-                        row_dict = {}
-                        for col_name in df.columns:
-                            val = row[col_name]
-                            row_dict[col_name] = process_value_to_richtext(val, key_name=col_name)
-                        table_list.append(row_dict)
+                        row_dict = {col: keep_table_value_raw(row[col]) for col in df.columns}
+                        table.append(row_dict)
 
-                    context[sheet_name] = table_list
-                    print(f"已載入表格資料：{sheet_name}（共 {len(table_list)} 筆）")
+                    context[sheet_name] = table
 
-            # 渲染 Word
-            doc_stream = io.BytesIO(word_bytes)
-            doc = DocxTemplate(doc_stream)
+            # -------- Word Render --------
+            doc = DocxTemplate(io.BytesIO(word_bytes))
             doc.render(context)
 
-            # 輸出
-            output_buffer = io.BytesIO()
-            doc.save(output_buffer)
-            doc_bytes = output_buffer.getvalue()
+            output = io.BytesIO()
+            doc.save(output)
 
-            # 檔名邏輯
-            download_name = "報告測試.docx"
-            file_name_var = context.get("檔名", None)
-            
-            # 注意：如果 "檔名" 變數也被轉成 RichText，要取回純文字才能當檔名
-            if isinstance(file_name_var, RichText):
-                # 這裡簡單處理，RichText 很難直接轉回 string，建議檔名變數在 Excel 裡不要是純數字
-                download_name = "Generated_Report.docx" 
-            elif isinstance(file_name_var, str) and file_name_var.strip():
-                download_name = f"{file_name_var.strip()}.docx"
+            st.session_state["generated_doc"] = output.getvalue()
+            st.session_state["download_name"] = "Generated_Report.docx"
 
-            # 將結果存入 Session State ==
-            st.session_state['generated_doc'] = doc_bytes
-            st.session_state['download_name'] = download_name
-            st.success("✅ 報告生成成功！請點擊下方按鈕下載。")
+            st.success("✅ 報告生成成功！請下載檔案。")
 
         except Exception as e:
             st.error(f"❌ 發生錯誤：{e}")
-            
-    # 只要 session_state 裡有檔案，就顯示下載按鈕
-    if 'generated_doc' in st.session_state:
+
+    if "generated_doc" in st.session_state:
         st.download_button(
             label="📥 下載生成的報告",
-            data=st.session_state['generated_doc'],
-            file_name=st.session_state['download_name'],
+            data=st.session_state["generated_doc"],
+            file_name=st.session_state["download_name"],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
-
-
-
-
-
-
-
-
-
-
-
-
