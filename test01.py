@@ -26,8 +26,10 @@ def process_value_to_richtext(val, key_name=""):
     if val_str == "":
         return ""
 
-    if "~" in val_str:
-        return val_str
+    if "~" in val_str or "～" in val_str:
+        rt = RichText()
+        rt.add(val_str, color="000000", bold=False) # 強制黑色、不加粗
+        return rt
 
     is_number = False
     float_val = 0.0
@@ -225,6 +227,7 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state['download_name'],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
 
 
 
