@@ -10,7 +10,8 @@ FORMAT_RULES = {
     "me_prefix": {"description": "ME 類：千分位 + 保留原始小數"},
     "decimal_2": {
         "keywords": ["_rate", "elec_price", "new_cop_std", "new_eff_std"],
-        "description": "2 位小數"},
+        "description": "2 位小數"
+                 },
     "decimal_1": {"keywords": ["_year"], "description": "1 位小數"},
     "integer": {"description": "整數（預設）"},
 }
@@ -189,3 +190,4 @@ if uploaded_word and uploaded_excel:
             file_name=st.session_state["download_name"],
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+
