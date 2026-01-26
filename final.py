@@ -25,12 +25,12 @@ class AppConfig:
         "decimal_1": {"keywords": ["_year"], "description": "1 位小數"},
     }
 
-    # 只有欄位名稱包含以下關鍵字的，才會進行數值格式化(千分位+小數點)
+    # 表格只有欄位名稱包含以下關鍵字的，才會進行數值格式化(千分位+小數點)
     TABLE_INCLUDE_KEYWORDS = ["kwh", "elecost", "eleccostperkwh"]
 
-    # 表格識別關鍵字
+    # 識別關鍵字
     TARGET_NAMES = ["名稱", "name", "設備名稱"]
-    TARGET_NOS = ["no", "編號", "設備編號", "那台冰水主機代號"]
+    TARGET_NOS = ["no", "編號", "設備編號", "冰水主機代號"]
     
     # 排序權重 (數字越小越前面)
     SORT_WEIGHTS = {
@@ -408,4 +408,5 @@ class ReportGeneratorUI:
 
 if __name__ == "__main__":
     app = ReportGeneratorUI()
+
     app.run()
