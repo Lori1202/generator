@@ -11,7 +11,7 @@ import re
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- 1. 配置與常數 ---
+# --- 常數配置 ---
 
 class AppConfig:
     PAGE_TITLE = "節能績效計劃書生成器"
@@ -40,7 +40,7 @@ class AppConfig:
     }
 
 class DataFormatter:
-    """數據清洗與格式化"""
+    """清洗與格式化"""
     
     @staticmethod
     def clean_text(val: Any) -> str:
@@ -53,7 +53,7 @@ class DataFormatter:
 
     @staticmethod
     def format_variable_value(val: Any, key_name: str = "") -> str:
-        """變數頁籤的格式化邏輯 """
+        """格式化邏輯"""
         val_str = DataFormatter.clean_text(val)
         if not val_str: 
             return ""
@@ -66,22 +66,22 @@ class DataFormatter:
             float_val = float(val_str)
             key_lower = str(key_name).lower()
             
-            # 規則 1: ME 開頭
+            # 1: ME 開頭
             if key_lower.startswith("me_"):
                 if "." in val_str:
                     parts = val_str.split(".")
                     return f"{int(parts[0]):,}.{parts[1]}"
                 return f"{int(float_val):,}"
             
-            # 規則 2: 兩位小數
+            # 2: 兩位小數
             if any(k in key_lower for k in AppConfig.FORMAT_RULES["decimal_2"]["keywords"]):
                 return f"{float_val:,.2f}"
             
-            # 規則 3: 一位小數
+            # 3: 一位小數
             if any(k in key_lower for k in AppConfig.FORMAT_RULES["decimal_1"]["keywords"]):
                 return f"{float_val:,.1f}"
             
-            # 預設: 整數
+            # 整數
             return f"{float_val:,.0f}"
 
         except ValueError:
@@ -410,3 +410,4 @@ if __name__ == "__main__":
     app = ReportGeneratorUI()
 
     app.run()
+
