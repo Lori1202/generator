@@ -383,6 +383,16 @@ class ReportGeneratorUI:
                 builder = ContextBuilder(excel_file)
                 context = builder.build()
                 
+                # 從變數中取得 company_name，若無則預設為 "Company"
+                c_name = context.get("company_name", "Company")
+                
+                # 清洗檔名
+                safe_name = re.sub(r'[\\/*?:"<>|]', "", str(c_name)).strip()
+                if not safe_name: safe_name = "Company"
+                
+                zip_filename = f"Report_{safe_name}.zip"
+                # ---------------------------
+                
                 zip_buffer = io.BytesIO()
                 with zipfile.ZipFile(zip_buffer, "w") as zf:
                     for tpl in templates:
@@ -396,11 +406,12 @@ class ReportGeneratorUI:
                 
                 st.success("✅ 報告生成成功！")
                 st.download_button(
-                    "📦 下載結果 (ZIP)", 
+                    f"📦 下載結果 ({zip_filename})", 
                     zip_buffer.getvalue(), 
-                    "Reports.zip", 
+                    zip_filename, 
                     "application/zip"
                 )
+
                 
         except Exception as e:
             logger.error(e, exc_info=True)
@@ -410,4 +421,5 @@ if __name__ == "__main__":
     app = ReportGeneratorUI()
 
     app.run()
+
 
